@@ -12,16 +12,6 @@ class AliasGame {
         this.gameStarted = false;
         this.totalGames = 0;
         
-        // Онлайн-режим
-        this.socket = null;
-        this.roomCode = null;
-        this.playerId = null;
-        this.playerName = "Игрок";
-        this.isLeader = false;
-        this.players = [];
-        this.onlineGameState = null;
-        this.connectionStatus = 'disconnected';
-        
         this.init();
     }
 
@@ -361,44 +351,28 @@ class AliasGame {
     }
 
     updateStatsDisplay() {
-        const totalGamesElement = document.getElementById('totalGames');
-        if (totalGamesElement) {
-            totalGamesElement.textContent = this.totalGames;
-        }
+        document.getElementById('totalGames').textContent = this.totalGames;
     }
 
     initTelegram() {
         if (window.Telegram && Telegram.WebApp) {
             Telegram.WebApp.ready();
             Telegram.WebApp.expand();
+            
+            const themeParams = Telegram.WebApp.themeParams;
+            document.documentElement.style.setProperty('--tg-theme-bg-color', themeParams.bg_color || '#667eea');
+            document.documentElement.style.setProperty('--tg-theme-text-color', themeParams.text_color || '#333');
         }
     }
 
     bindEvents() {
         // Главное меню
         document.getElementById('startGameBtn').addEventListener('click', () => this.showSetupScreen());
-        document.getElementById('onlineGameBtn').addEventListener('click', () => this.showOnlineMenu());
         document.getElementById('aboutBtn').addEventListener('click', () => this.showAboutScreen());
         
         // Экран "Об игре"
         document.getElementById('backToMenuBtn').addEventListener('click', () => this.showMainMenu());
         
-        // Онлайн-режим
-        document.getElementById('backToMenuFromOnline').addEventListener('click', () => this.showMainMenu());
-        document.getElementById('createRoomBtn').addEventListener('click', () => this.showCreateRoomScreen());
-        document.getElementById('joinRoomBtn').addEventListener('click', () => this.showJoinRoomScreen());
-        document.getElementById('backToOnlineMenu').addEventListener('click', () => this.showOnlineMenu());
-        document.getElementById('backToOnlineMenuFromJoin').addEventListener('click', () => this.showOnlineMenu());
-        
-        document.getElementById('createRoom').addEventListener('click', () => this.createRoom());
-        document.getElementById('joinRoom').addEventListener('click', () => this.joinRoom());
-        document.getElementById('startOnlineGame').addEventListener('click', () => this.startOnlineGame());
-        document.getElementById('leaveLobby').addEventListener('click', () => this.leaveLobby());
-        document.getElementById('copyCode').addEventListener('click', () => this.copyRoomCode());
-        
-        document.getElementById('onlineCorrectBtn').addEventListener('click', () => this.onlineCorrectWord());
-        document.getElementById('onlineSkipBtn').addEventListener('click', () => this.onlineSkipWord());
-
         // Настройки
         document.getElementById('backToMenuFromSetup').addEventListener('click', () => this.showMainMenu());
         document.getElementById('addTeam').addEventListener('click', () => this.addTeam());
@@ -416,21 +390,6 @@ class AliasGame {
         // Результаты
         document.getElementById('newGameBtn').addEventListener('click', () => this.showSetupScreen());
         document.getElementById('backToMenuFromResults').addEventListener('click', () => this.showMainMenu());
-
-        // Обработчики для кнопок удаления команд
-        this.initializeTeamRemoveHandlers();
-    }
-
-    initializeTeamRemoveHandlers() {
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('btn-remove-team')) {
-                if (document.querySelectorAll('.team').length > 1) {
-                    e.target.closest('.team').remove();
-                } else {
-                    this.showNotification('Должна остаться хотя бы одна команда!');
-                }
-            }
-        });
     }
 
     // Управление экранами
@@ -438,10 +397,11 @@ class AliasGame {
         document.querySelectorAll('.screen').forEach(screen => {
             screen.classList.remove('active');
         });
-        const targetScreen = document.getElementById(screenId);
-        if (targetScreen) {
-            targetScreen.classList.add('active');
-        }
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    showLoadingScreen() {
+        this.showScreen('loadingScreen');
     }
 
     showMainMenu() {
@@ -453,22 +413,6 @@ class AliasGame {
         this.showScreen('aboutScreen');
     }
 
-    showOnlineMenu() {
-        this.showScreen('onlineMenuScreen');
-    }
-
-    showCreateRoomScreen() {
-        this.showScreen('createRoomScreen');
-    }
-
-    showJoinRoomScreen() {
-        this.showScreen('joinRoomScreen');
-    }
-
-    showLobbyScreen() {
-        this.showScreen('lobbyScreen');
-    }
-
     showSetupScreen() {
         this.showScreen('setupScreen');
         this.initializeDefaultTeams();
@@ -476,10 +420,6 @@ class AliasGame {
 
     showGameScreen() {
         this.showScreen('gameScreen');
-    }
-
-    showOnlineGameScreen() {
-        this.showScreen('onlineGameScreen');
     }
 
     showPauseScreen() {
@@ -492,11 +432,9 @@ class AliasGame {
         this.displayResults();
     }
 
-    // Оффлайн-игра
+    // Логика игры
     initializeDefaultTeams() {
         const teamsContainer = document.getElementById('teams');
-        if (!teamsContainer) return;
-
         teamsContainer.innerHTML = `
             <div class="team">
                 <input type="text" class="team-name" value="Команда 1" placeholder="Название команды">
@@ -509,12 +447,19 @@ class AliasGame {
                 <button class="btn-remove-team">×</button>
             </div>
         `;
+        
+        // Добавляем обработчики для кнопок удаления
+        document.querySelectorAll('.btn-remove-team').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (document.querySelectorAll('.team').length > 1) {
+                    e.target.closest('.team').remove();
+                }
+            });
+        });
     }
 
     addTeam() {
         const teamsContainer = document.getElementById('teams');
-        if (!teamsContainer) return;
-
         const teamCount = teamsContainer.children.length + 1;
         
         const teamDiv = document.createElement('div');
@@ -526,12 +471,19 @@ class AliasGame {
         `;
         
         teamsContainer.appendChild(teamDiv);
+        
+        // Добавляем обработчик для новой кнопки удаления
+        teamDiv.querySelector('.btn-remove-team').addEventListener('click', (e) => {
+            if (document.querySelectorAll('.team').length > 1) {
+                e.target.closest('.team').remove();
+            }
+        });
     }
 
     startGame() {
         this.setupTeams();
         if (this.teams.length === 0) {
-            this.showNotification('Добавьте хотя бы одну команду!');
+            alert('Добавьте хотя бы одну команду!');
             return;
         }
 
@@ -540,7 +492,7 @@ class AliasGame {
         this.correctWords = [];
         this.skippedWords = [];
         
-        const roundTime = parseInt(document.getElementById('roundTime').value) || 60;
+        const roundTime = parseInt(document.getElementById('roundTime').value);
         this.timeLeft = roundTime;
         
         this.totalGames++;
@@ -556,8 +508,7 @@ class AliasGame {
         const teamElements = document.querySelectorAll('.team');
         
         teamElements.forEach(teamEl => {
-            const nameInput = teamEl.querySelector('.team-name');
-            const name = nameInput ? nameInput.value : `Команда ${this.teams.length + 1}`;
+            const name = teamEl.querySelector('.team-name').value || `Команда ${this.teams.length + 1}`;
             this.teams.push({
                 name: name,
                 score: 0,
@@ -567,31 +518,23 @@ class AliasGame {
     }
 
     updateGameInfo() {
-        if (!this.teams[this.currentTeamIndex]) return;
-
         const currentTeam = this.teams[this.currentTeamIndex];
         document.getElementById('currentTeamName').textContent = currentTeam.name;
         document.getElementById('currentScore').textContent = `Счёт: ${currentTeam.score}`;
+        document.getElementById('timer').textContent = this.timeLeft;
         
-        const timerElement = document.getElementById('timer');
-        if (timerElement) {
-            timerElement.textContent = this.timeLeft;
-            
-            if (this.timeLeft <= 10) {
-                timerElement.classList.add('warning');
-            } else {
-                timerElement.classList.remove('warning');
-            }
-        }
-        
-        const wordsToWin = parseInt(document.getElementById('wordsToWin').value) || 20;
+        const wordsToWin = parseInt(document.getElementById('wordsToWin').value);
         const progress = (currentTeam.score / wordsToWin) * 100;
+        document.getElementById('progressFill').style.width = `${Math.min(progress, 100)}%`;
+        document.getElementById('progressText').textContent = `${currentTeam.score}/${wordsToWin}`;
         
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
-        
-        if (progressFill) progressFill.style.width = `${Math.min(progress, 100)}%`;
-        if (progressText) progressText.textContent = `${currentTeam.score}/${wordsToWin}`;
+        // Обновляем таймер
+        const timerElement = document.getElementById('timer');
+        if (this.timeLeft <= 10) {
+            timerElement.classList.add('warning');
+        } else {
+            timerElement.classList.remove('warning');
+        }
     }
 
     nextWord() {
@@ -601,16 +544,11 @@ class AliasGame {
         const currentWord = this.words[this.currentWordIndex];
         
         document.getElementById('currentWord').textContent = currentWord.word;
+        document.getElementById('wordHint').textContent = currentWord.hint ? `Подсказка: ${currentWord.hint}` : '';
         
-        const wordHint = document.getElementById('wordHint');
-        if (wordHint) {
-            wordHint.textContent = currentWord.hint ? `Подсказка: ${currentWord.hint}` : '';
-        }
-        
-        const currentWordElement = document.getElementById('currentWord');
-        currentWordElement.classList.add('pulse');
+        document.getElementById('currentWord').classList.add('pulse');
         setTimeout(() => {
-            currentWordElement.classList.remove('pulse');
+            document.getElementById('currentWord').classList.remove('pulse');
         }, 500);
     }
 
@@ -640,21 +578,16 @@ class AliasGame {
     }
 
     animateScoreChange(change) {
-        const teamElements = document.querySelectorAll('.team');
-        if (teamElements[this.currentTeamIndex]) {
-            const scoreElement = teamElements[this.currentTeamIndex].querySelector('.score');
-            if (scoreElement) {
-                scoreElement.textContent = this.teams[this.currentTeamIndex].score;
-                scoreElement.classList.add('score-change');
-                setTimeout(() => {
-                    scoreElement.classList.remove('score-change');
-                }, 300);
-            }
-        }
+        const scoreElement = document.querySelector(`#teams .team:nth-child(${this.currentTeamIndex + 1}) .score`);
+        scoreElement.textContent = this.teams[this.currentTeamIndex].score;
+        scoreElement.classList.add('score-change');
+        setTimeout(() => {
+            scoreElement.classList.remove('score-change');
+        }, 300);
     }
 
     checkWinCondition() {
-        const wordsToWin = parseInt(document.getElementById('wordsToWin').value) || 20;
+        const wordsToWin = parseInt(document.getElementById('wordsToWin').value);
         const currentTeam = this.teams[this.currentTeamIndex];
         
         if (currentTeam.score >= wordsToWin) {
@@ -663,7 +596,6 @@ class AliasGame {
     }
 
     startTimer() {
-        clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => {
             if (!this.isPaused && this.gameStarted) {
                 this.timeLeft--;
@@ -683,7 +615,7 @@ class AliasGame {
         if (this.currentTeamIndex >= this.teams.length) {
             this.showResultsScreen();
         } else {
-            const roundTime = parseInt(document.getElementById('roundTime').value) || 60;
+            const roundTime = parseInt(document.getElementById('roundTime').value);
             this.timeLeft = roundTime;
             this.correctWords = [];
             this.skippedWords = [];
@@ -716,12 +648,10 @@ class AliasGame {
 
     displayResults() {
         const resultsList = document.getElementById('resultsList');
-        if (!resultsList) return;
-
         resultsList.innerHTML = '';
         
         const sortedTeams = [...this.teams].sort((a, b) => b.score - a.score);
-        const maxScore = sortedTeams[0]?.score || 0;
+        const maxScore = sortedTeams[0].score;
         
         sortedTeams.forEach((team, index) => {
             const teamResult = document.createElement('div');
@@ -733,444 +663,9 @@ class AliasGame {
             resultsList.appendChild(teamResult);
         });
     }
-
-    // Онлайн-режим
-    async connectToServer() {
-        this.connectionStatus = 'connecting';
-        this.updateConnectionStatus();
-        
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                this.socket = {
-                    send: (data) => this.handleOutgoingMessage(data),
-                    close: () => this.handleDisconnect()
-                };
-                this.connectionStatus = 'connected';
-                this.updateConnectionStatus();
-                resolve();
-            }, 1000);
-        });
-    }
-
-    handleOutgoingMessage(data) {
-        console.log('Отправка на сервер:', data);
-        this.handleIncomingMessage(this.emulateServerResponse(data));
-    }
-
-    emulateServerResponse(data) {
-        const message = JSON.parse(data);
-        
-        switch (message.type) {
-            case 'create_room':
-                return {
-                    type: 'room_created',
-                    roomCode: this.generateRoomCode(),
-                    playerId: this.generatePlayerId()
-                };
-                
-            case 'join_room':
-                return {
-                    type: 'room_joined',
-                    players: [
-                        { id: '1', name: 'Создатель', isLeader: true },
-                        { id: this.playerId, name: this.playerName, isLeader: false }
-                    ],
-                    roomCode: message.roomCode
-                };
-                
-            case 'start_game':
-                return {
-                    type: 'game_started',
-                    gameState: this.createOnlineGameState()
-                };
-                
-            case 'word_guessed':
-                return {
-                    type: 'word_guessed',
-                    gameState: this.updateOnlineGameState(true)
-                };
-                
-            case 'word_skipped':
-                return {
-                    type: 'word_skipped',
-                    gameState: this.updateOnlineGameState(false)
-                };
-                
-            default:
-                return { type: 'unknown' };
-        }
-    }
-
-    handleIncomingMessage(message) {
-        switch (message.type) {
-            case 'room_created':
-                this.handleRoomCreated(message);
-                break;
-            case 'room_joined':
-                this.handleRoomJoined(message);
-                break;
-            case 'player_joined':
-                this.handlePlayerJoined(message);
-                break;
-            case 'player_left':
-                this.handlePlayerLeft(message);
-                break;
-            case 'game_started':
-                this.handleGameStarted(message);
-                break;
-            case 'game_state_update':
-                this.handleGameStateUpdate(message);
-                break;
-            case 'word_guessed':
-                this.handleWordGuessed(message);
-                break;
-            case 'word_skipped':
-                this.handleWordSkipped(message);
-                break;
-        }
-    }
-
-    generateRoomCode() {
-        return Math.random().toString(36).substring(2, 8).toUpperCase();
-    }
-
-    generatePlayerId() {
-        return Math.random().toString(36).substring(2, 15);
-    }
-
-    async createRoom() {
-        const playerNameInput = document.getElementById('playerName');
-        this.playerName = playerNameInput ? playerNameInput.value : 'Игрок';
-        
-        if (!this.playerName.trim()) {
-            this.showNotification('Введите ваше имя!');
-            return;
-        }
-        
-        await this.connectToServer();
-        
-        this.socket.send(JSON.stringify({
-            type: 'create_room',
-            settings: {
-                roundTime: parseInt(document.getElementById('onlineRoundTime').value) || 60,
-                wordsToWin: parseInt(document.getElementById('onlineWordsToWin').value) || 25
-            },
-            playerName: this.playerName
-        }));
-    }
-
-    handleRoomCreated(message) {
-        this.roomCode = message.roomCode;
-        this.playerId = message.playerId;
-        this.isLeader = true;
-        this.players = [{ id: this.playerId, name: this.playerName, isLeader: true }];
-        
-        document.getElementById('displayRoomCode').textContent = this.roomCode;
-        this.updatePlayersList();
-        document.getElementById('startOnlineGame').disabled = false;
-        
-        this.showLobbyScreen();
-        this.showNotification('Комната создана! Пригласите друзей.');
-    }
-
-    async joinRoom() {
-        const roomCodeInput = document.getElementById('roomCode');
-        const roomCode = roomCodeInput ? roomCodeInput.value.toUpperCase() : '';
-        
-        const playerNameInput = document.getElementById('joinPlayerName');
-        this.playerName = playerNameInput ? playerNameInput.value : 'Игрок';
-        
-        if (!roomCode || roomCode.length !== 6) {
-            this.showNotification('Введите корректный код комнаты (6 символов)');
-            return;
-        }
-        
-        if (!this.playerName.trim()) {
-            this.showNotification('Введите ваше имя!');
-            return;
-        }
-        
-        await this.connectToServer();
-        
-        this.socket.send(JSON.stringify({
-            type: 'join_room',
-            roomCode: roomCode,
-            playerName: this.playerName
-        }));
-    }
-
-    handleRoomJoined(message) {
-        this.roomCode = message.roomCode;
-        this.players = message.players;
-        this.isLeader = false;
-        
-        document.getElementById('displayRoomCode').textContent = this.roomCode;
-        this.updatePlayersList();
-        document.getElementById('startOnlineGame').disabled = true;
-        
-        this.showLobbyScreen();
-        this.showNotification('Успешно присоединились к комнате!');
-    }
-
-    updatePlayersList() {
-        const container = document.getElementById('playersContainer');
-        const count = document.getElementById('playersCount');
-        
-        if (!container || !count) return;
-
-        container.innerHTML = '';
-        this.players.forEach(player => {
-            const playerElement = document.createElement('div');
-            playerElement.className = `player-item ${player.isLeader ? 'leader' : ''} ${player.id === this.playerId ? 'current' : ''}`;
-            playerElement.innerHTML = `
-                <span class="player-name">${player.name} ${player.id === this.playerId ? '(Вы)' : ''}</span>
-                <span class="player-status">${player.isLeader ? '👑 Создатель' : '👤 Игрок'}</span>
-            `;
-            container.appendChild(playerElement);
-        });
-        
-        count.textContent = this.players.length;
-        
-        const startButton = document.getElementById('startOnlineGame');
-        if (startButton) {
-            startButton.style.display = this.isLeader ? 'block' : 'none';
-            startButton.disabled = this.players.length < 2;
-        }
-    }
-
-    startOnlineGame() {
-        if (!this.isLeader) return;
-        
-        if (this.players.length < 2) {
-            this.showNotification('Нужно как минимум 2 игрока для начала игры!');
-            return;
-        }
-        
-        this.socket.send(JSON.stringify({
-            type: 'start_game',
-            roomCode: this.roomCode
-        }));
-    }
-
-    handleGameStarted(message) {
-        this.onlineGameState = message.gameState;
-        this.showOnlineGameScreen();
-        this.updateOnlineGameDisplay();
-    }
-
-    createOnlineGameState() {
-        const teams = this.players.map((player, index) => ({
-            id: `team-${index + 1}`,
-            name: `Команда ${index + 1}`,
-            score: 0,
-            players: [player.id]
-        }));
-
-        return {
-            currentTeamIndex: 0,
-            currentWord: this.getRandomWord(),
-            timeLeft: parseInt(document.getElementById('onlineRoundTime').value) || 60,
-            teams: teams,
-            wordsToWin: parseInt(document.getElementById('onlineWordsToWin').value) || 25,
-            currentExplainer: this.players[0].id,
-            correctWords: [],
-            skippedWords: []
-        };
-    }
-
-    updateOnlineGameState(isCorrect) {
-        if (!this.onlineGameState) return this.createOnlineGameState();
-
-        const currentTeam = this.onlineGameState.teams[this.onlineGameState.currentTeamIndex];
-        
-        if (isCorrect) {
-            currentTeam.score++;
-            this.onlineGameState.correctWords.push(this.onlineGameState.currentWord.word);
-        } else {
-            if (currentTeam.score > 0) {
-                currentTeam.score--;
-            }
-            this.onlineGameState.skippedWords.push(this.onlineGameState.currentWord.word);
-        }
-
-        // Переход к следующему объясняющему
-        const currentTeamPlayers = this.players.filter(p => 
-            this.onlineGameState.teams[this.onlineGameState.currentTeamIndex].players.includes(p.id)
-        );
-        const currentExplainerIndex = currentTeamPlayers.findIndex(p => p.id === this.onlineGameState.currentExplainer);
-        const nextExplainerIndex = (currentExplainerIndex + 1) % currentTeamPlayers.length;
-        this.onlineGameState.currentExplainer = currentTeamPlayers[nextExplainerIndex].id;
-
-        this.onlineGameState.currentWord = this.getRandomWord();
-        
-        return this.onlineGameState;
-    }
-
-    updateOnlineGameDisplay() {
-        if (!this.onlineGameState) return;
-        
-        const currentTeam = this.onlineGameState.teams[this.onlineGameState.currentTeamIndex];
-        const explainer = this.players.find(p => p.id === this.onlineGameState.currentExplainer);
-        
-        document.getElementById('onlineCurrentTeam').textContent = currentTeam.name;
-        document.getElementById('onlineCurrentScore').textContent = `Счёт: ${currentTeam.score}`;
-        document.getElementById('onlineCurrentWord').textContent = this.onlineGameState.currentWord.word;
-        
-        const wordHint = document.getElementById('onlineWordHint');
-        if (wordHint) {
-            wordHint.textContent = this.onlineGameState.currentWord.hint ? 
-                `Подсказка: ${this.onlineGameState.currentWord.hint}` : '';
-        }
-        
-        document.getElementById('currentExplainer').textContent = explainer ? explainer.name : '...';
-        document.getElementById('onlineTimer').textContent = this.onlineGameState.timeLeft;
-        
-        const progress = (currentTeam.score / this.onlineGameState.wordsToWin) * 100;
-        document.getElementById('onlineProgressFill').style.width = `${Math.min(progress, 100)}%`;
-        document.getElementById('onlineProgressText').textContent = 
-            `${currentTeam.score}/${this.onlineGameState.wordsToWin}`;
-        
-        this.updateTeamsScores();
-    }
-
-    updateTeamsScores() {
-        const container = document.getElementById('onlineTeamsScores');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        this.onlineGameState.teams.forEach((team, index) => {
-            const isCurrent = index === this.onlineGameState.currentTeamIndex;
-            const teamElement = document.createElement('div');
-            teamElement.className = `team-score-item ${isCurrent ? 'current' : ''}`;
-            teamElement.innerHTML = `
-                <span>${team.name}</span>
-                <span class="score">${team.score} очков</span>
-            `;
-            container.appendChild(teamElement);
-        });
-    }
-
-    onlineCorrectWord() {
-        if (this.onlineGameState.currentExplainer !== this.playerId) {
-            this.showNotification('Сейчас не ваш ход для объяснения!');
-            return;
-        }
-        
-        this.socket.send(JSON.stringify({
-            type: 'word_guessed',
-            roomCode: this.roomCode
-        }));
-    }
-
-    onlineSkipWord() {
-        if (this.onlineGameState.currentExplainer !== this.playerId) {
-            this.showNotification('Сейчас не ваш ход для объяснения!');
-            return;
-        }
-        
-        this.socket.send(JSON.stringify({
-            type: 'word_skipped',
-            roomCode: this.roomCode
-        }));
-    }
-
-    handleWordGuessed(message) {
-        this.onlineGameState = message.gameState;
-        this.updateOnlineGameDisplay();
-        this.showNotification('Слово угадано! +1 очко');
-    }
-
-    handleWordSkipped(message) {
-        this.onlineGameState = message.gameState;
-        this.updateOnlineGameDisplay();
-        this.showNotification('Слово пропущено! -1 очко');
-    }
-
-    handleGameStateUpdate(message) {
-        this.onlineGameState = message.gameState;
-        this.updateOnlineGameDisplay();
-    }
-
-    copyRoomCode() {
-        if (!this.roomCode) return;
-        
-        navigator.clipboard.writeText(this.roomCode).then(() => {
-            this.showNotification('Код скопирован в буфер!');
-        }).catch(() => {
-            // Fallback для старых браузеров
-            const textArea = document.createElement('textarea');
-            textArea.value = this.roomCode;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            this.showNotification('Код скопирован!');
-        });
-    }
-
-    leaveLobby() {
-        if (this.socket) {
-            this.socket.close();
-        }
-        this.resetOnlineState();
-        this.showMainMenu();
-    }
-
-    resetOnlineState() {
-        this.socket = null;
-        this.roomCode = null;
-        this.isLeader = false;
-        this.players = [];
-        this.onlineGameState = null;
-        this.connectionStatus = 'disconnected';
-        this.updateConnectionStatus();
-    }
-
-    updateConnectionStatus() {
-        console.log('Статус подключения:', this.connectionStatus);
-    }
-
-    showNotification(message) {
-        // Создаем уведомление
-        const notification = document.createElement('div');
-        notification.className = 'notification';
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 3000);
-    }
-
-    handleDisconnect() {
-        this.connectionStatus = 'disconnected';
-        this.updateConnectionStatus();
-        this.showNotification('Соединение потеряно');
-        this.resetOnlineState();
-        this.showMainMenu();
-    }
-
-    handlePlayerJoined(message) {
-        this.players.push(message.player);
-        this.updatePlayersList();
-        this.showNotification(`${message.player.name} присоединился к игре`);
-    }
-
-    handlePlayerLeft(message) {
-        this.players = this.players.filter(p => p.id !== message.playerId);
-        this.updatePlayersList();
-        this.showNotification('Игрок покинул игру');
-    }
-
-    getRandomWord() {
-        return this.words[Math.floor(Math.random() * this.words.length)];
-    }
 }
 
-// Инициализация игры когда DOM загружен
+// Инициализация игры
 document.addEventListener('DOMContentLoaded', () => {
     new AliasGame();
 });
