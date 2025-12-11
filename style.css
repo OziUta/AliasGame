@@ -537,25 +537,24 @@ input:checked + .slider:before {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 10px 0;
     width: 100%;
-    padding: 0 5px;
-    min-height: 280px;
+    padding: 0 10px;
+    position: relative;
+    min-height: 250px;
 }
 
 .grid {
     display: grid;
-    gap: 8px;
     width: 100%;
-    max-width: min(400px, 85vh);
-    aspect-ratio: 1;
-    padding: 5px;
-    box-sizing: border-box;
+    max-width: min(350px, 80vw);
+    margin: 0 auto;
+    gap: 6px;
+    position: relative;
 }
 
 .cell {
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
+    border-radius: 8px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -563,12 +562,9 @@ input:checked + .slider:before {
     overflow: hidden;
     cursor: pointer;
     transition: var(--transition);
-    border: 2px solid transparent;
+    border: 1px solid transparent;
     touch-action: manipulation;
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    min-width: 0;
+    aspect-ratio: 1; /* Ключевое свойство для квадратных ячеек */
 }
 
 .cell:active {
@@ -579,7 +575,13 @@ input:checked + .slider:before {
 .cell.active {
     animation: pulseCell 2s infinite;
 }
-
+.grid-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 5px;
+}
 /* Элементы клеток */
 .start {
     background: radial-gradient(circle at 30% 30%, #ffffff, #e0e0e0);
@@ -1155,3 +1157,4 @@ button:focus-visible,
     outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
+
