@@ -2,163 +2,197 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alias - Объясняй слова</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Световая Призма</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
 </head>
 <body>
-    <div class="container">
-        <!-- Экран загрузки -->
-        <div id="loadingScreen" class="screen active">
-            <div class="loading-content">
-                <div class="loading-spinner"></div>
-                <h1>Alias</h1>
-                <p>Загрузка...</p>
-            </div>
-        </div>
-
-        <!-- Главное меню -->
-        <div id="mainMenuScreen" class="screen">
-            <div class="menu-content">
-                <h1>🎯 Alias</h1>
-                <p class="menu-subtitle">Объясняй слова и побеждай!</p>
-                
-                <div class="menu-buttons">
-                    <button id="startGameBtn" class="btn-primary menu-btn">Начать игру</button>
-                    <button id="aboutBtn" class="btn-secondary menu-btn">Об игре</button>
+    <!-- Экран загрузки -->
+    <div id="loadingScreen" class="screen active">
+        <div class="loading-container">
+            <div class="prism-loader">
+                <div class="prism">
+                    <div class="face face1"></div>
+                    <div class="face face2"></div>
+                    <div class="face face3"></div>
                 </div>
-                
-                <div class="menu-stats">
-                    <div class="stat-item">
-                        <span class="stat-number" id="totalGames">0</span>
-                        <span class="stat-label">сыгранных игр</span>
-                    </div>
+                <h2>Загрузка...</h2>
+                <div class="loading-bar">
+                    <div class="loading-progress"></div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Экран "Об игре" -->
-        <div id="aboutScreen" class="screen">
-            <div class="about-content">
-                <h2>Об игре Alias</h2>
-                
-                <div class="rules">
-                    <h3>📋 Правила игры:</h3>
-                    <ul>
-                        <li>Объясняйте слова своей команде без использования однокоренных слов</li>
-                        <li>За каждое угаданное слово команда получает +1 очко</li>
-                        <li>За пропущенное слово команда теряет -1 очко</li>
-                        <li>Счёт не может опуститься ниже 0</li>
-                        <li>Побеждает команда, первой набравшая нужное количество очков</li>
-                    </ul>
-                    
-                    <h3>🎮 Как играть:</h3>
-                    <ol>
-                        <li>Создайте команды и настройте параметры игры</li>
-                        <li>Объясняйте слова, пока не закончится время</li>
-                        <li>Нажимайте "✓ Угадано" или "✗ Пропустить"</li>
-                        <li>Следите за счётом и временем</li>
-                    </ol>
-                </div>
-                
-                <button id="backToMenuBtn" class="btn-primary">Назад в меню</button>
-            </div>
-        </div>
-
-        <!-- Экран настроек -->
-        <div id="setupScreen" class="screen">
-            <div class="setup-header">
-                <button id="backToMenuFromSetup" class="btn-back">← Назад</button>
-                <h2>Настройки игры</h2>
-            </div>
-            
-            <div class="settings">
-                <div class="setting-group">
-                    <label>Время раунда (секунды):</label>
-                    <input type="number" id="roundTime" value="60" min="30" max="180">
-                </div>
-                <div class="setting-group">
-                    <label>Количество слов для победы:</label>
-                    <input type="number" id="wordsToWin" value="20" min="10" max="50">
-                </div>
-                <div class="setting-group">
-                    <label>Команды:</label>
-                    <div id="teams">
-                        <div class="team">
-                            <input type="text" class="team-name" value="Команда 1" placeholder="Название команды">
-                            <span class="score">0</span>
-                            <button class="btn-remove-team">×</button>
-                        </div>
-                        <div class="team">
-                            <input type="text" class="team-name" value="Команда 2" placeholder="Название команды">
-                            <span class="score">0</span>
-                            <button class="btn-remove-team">×</button>
-                        </div>
-                    </div>
-                    <button id="addTeam" class="btn-outline">+ Добавить команду</button>
-                </div>
-            </div>
-            <button id="startGame" class="btn-primary">Начать игру</button>
-        </div>
-
-        <!-- Экран игры -->
-        <div id="gameScreen" class="screen">
-            <div class="game-header">
-                <div class="team-info">
-                    <span id="currentTeamName">Команда 1</span>
-                    <span id="currentScore">Счёт: 0</span>
-                </div>
-                <div class="timer" id="timer">60</div>
-            </div>
-            
-            <div class="word-card">
-                <h2 id="currentWord">Слово</h2>
-                <div class="word-hint" id="wordHint"></div>
-            </div>
-
-            <div class="game-controls">
-                <button id="correctBtn" class="btn-success">✓ Угадано (+1)</button>
-                <button id="skipBtn" class="btn-danger">✗ Пропустить (-1)</button>
-                <button id="pauseBtn" class="btn-secondary">⏸ Пауза</button>
-            </div>
-
-            <div class="progress">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <span id="progressText">0/20</span>
-            </div>
-        </div>
-
-        <!-- Экран паузы -->
-        <div id="pauseScreen" class="screen">
-            <h2>⏸ Пауза</h2>
-            <div class="pause-stats">
-                <div class="stat">
-                    <span class="stat-value" id="pauseCorrect">0</span>
-                    <span class="stat-label">угадано</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-value" id="pauseSkipped">0</span>
-                    <span class="stat-label">пропущено</span>
-                </div>
-            </div>
-            <button id="resumeBtn" class="btn-primary">Продолжить</button>
-            <button id="endGameBtn" class="btn-danger">Завершить игру</button>
-        </div>
-
-        <!-- Экран результатов -->
-        <div id="resultsScreen" class="screen">
-            <h2>🏆 Результаты</h2>
-            <div id="resultsList"></div>
-            <div class="results-buttons">
-                <button id="newGameBtn" class="btn-primary">Новая игра</button>
-                <button id="backToMenuFromResults" class="btn-secondary">В главное меню</button>
             </div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Главное меню -->
+    <div id="mainMenu" class="screen">
+        <div class="menu-container">
+            <div class="menu-header">
+                <div class="logo">
+                    <i class="fas fa-gem"></i>
+                    <h1>Световая Призма</h1>
+                </div>
+            </div>
+            
+            <div class="menu-content">
+                <div class="menu-section">
+                    <button id="playBtn" class="btn menu-btn primary">
+                        <i class="fas fa-play"></i>
+                        Начать игру
+                    </button>
+                </div>
+                
+                <div class="menu-section">
+                    <h3><i class="fas fa-layer-group"></i> Уровни</h3>
+                    <div class="level-selector">
+                        <div class="level-grid" id="levelGrid">
+                            <!-- Уровни будут сгенерированы через JS -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="menu-section">
+                    <h3><i class="fas fa-cog"></i> Настройки</h3>
+                    <div class="settings">
+                        <div class="setting">
+                            <span>Звуки</span>
+                            <label class="switch">
+                                <input type="checkbox" id="soundToggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting">
+                            <span>Анимации</span>
+                            <label class="switch">
+                                <input type="checkbox" id="animationToggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Игровой экран -->
+    <div id="gameScreen" class="screen">
+        <div class="game-container">
+            <!-- Верхняя панель -->
+            <div class="game-header">
+                <div class="header-left">
+                    <button id="backToMenu" class="btn icon-btn">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="level-info">
+                        <span class="level-title">Уровень <span id="level">1</span></span>
+                        <span class="level-name" id="levelName">Основы смешения</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="moves-counter">
+                        <i class="fas fa-shoe-prints"></i>
+                        <span id="moves">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Игровое поле -->
+            <div class="game-board">
+                <div class="color-info">
+                    <div class="current-color">
+                        <div class="color-display" id="currentColor"></div>
+                        <div class="color-text">
+                            <span id="currentColorName">Белый</span>
+                            <div class="rgb-values">
+                                <span>R:<span id="rValue">255</span></span>
+                                <span>G:<span id="gValue">255</span></span>
+                                <span>B:<span id="bValue">255</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="target-color">
+                        <span>Цель:</span>
+                        <span id="targetColor">Красный</span>
+                    </div>
+                </div>
+                
+                <div class="grid-wrapper">
+                    <div class="grid" id="grid">
+                        <!-- Игровое поле генерируется через JS -->
+                    </div>
+                </div>
+                
+                <div class="game-controls">
+                    <button id="undo" class="btn control-btn" disabled>
+                        <i class="fas fa-undo"></i> Отмена
+                    </button>
+                    <button id="reset" class="btn control-btn">
+                        <i class="fas fa-redo"></i> Заново
+                    </button>
+                    <button id="hintBtn" class="btn control-btn">
+                        <i class="fas fa-lightbulb"></i>
+                    </button>
+                </div>
+                
+                <div class="level-nav">
+                    <button id="prev" class="btn nav-btn">
+                        <i class="fas fa-chevron-left"></i> Назад
+                    </button>
+                    <button id="next" class="btn nav-btn">
+                        Вперёд <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для сообщений -->
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <i id="modalIcon" class="fas fa-star"></i>
+            <h2 id="modalTitle">Уровень пройден!</h2>
+            <p id="modalMessage"></p>
+            <div class="modal-stats">
+                <div class="stat">
+                    <span class="stat-label">Ходов:</span>
+                    <span id="modalMoves" class="stat-value">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Лучший:</span>
+                    <span id="modalBest" class="stat-value">-</span>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="modalRetry" class="btn modal-btn secondary">
+                    Повторить
+                </button>
+                <button id="modalNext" class="btn modal-btn">
+                    Далее
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Эффект частиц -->
+    <div id="particles"></div>
+    
+    <!-- Аудио элементы -->
+    <audio id="moveSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="prismSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-magic-sparkles-300.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="winSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="errorSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3" type="audio/mpeg">
+    </audio>
+
+    <script src="game.js"></script>
 </body>
 </html>
