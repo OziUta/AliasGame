@@ -47,7 +47,7 @@ class ColorPuzzleGame {
         
         // Инициализация
         this.currentLevel = 1;
-        this.maxLevel = 10;
+        this.maxLevel = 15;
         this.moves = 0;
         this.history = [];
         this.bestScores = JSON.parse(localStorage.getItem('prismBestScores')) || {};
@@ -224,10 +224,95 @@ class ColorPuzzleGame {
                 start: [0, 0],
                 goal: [7, 7],
                 targetColor: 'W'
+            },
+            11: {
+                name: "Спираль",
+                size: 7,
+                grid: [
+                    ['S', 'F_R', 'F_R', 'F_R', 'F_R', 'F_R', 'F_R'],
+                    ['F_R', 'P_B', 'P_B', 'P_B', 'P_B', 'P_B', 'F_G'],
+                    ['F_R', 'P_B', 'P_G', 'P_G', 'P_G', 'P_B', 'F_G'],
+                    ['F_R', 'P_B', 'P_G', 'F_W', 'P_G', 'P_B', 'F_G'],
+                    ['F_R', 'P_B', 'P_G', 'P_G', 'P_G', 'P_B', 'F_G'],
+                    ['F_R', 'P_B', 'P_B', 'P_B', 'P_B', 'P_B', 'F_G'],
+                    ['F_R', 'F_G', 'F_G', 'F_G', 'F_G', 'F_G', 'G']
+                ],
+                start: [0, 0],
+                goal: [6, 6],
+                targetColor: 'M'
+            },
+            12: {
+                name: "Шахматы",
+                size: 8,
+                grid: [
+                    ['S', null, 'F_R', null, 'F_R', null, 'F_R', null],
+                    [null, 'P_R', null, 'P_G', null, 'P_B', null, 'F_W'],
+                    ['F_M', null, 'F_M', null, 'F_Y', null, 'F_C', null],
+                    [null, 'P_G', null, 'P_B', null, 'P_R', null, 'P_G'],
+                    ['F_Y', null, 'F_C', null, 'F_M', null, 'F_Y', null],
+                    [null, 'P_B', null, 'P_R', null, 'P_G', null, 'P_B'],
+                    ['F_C', null, 'F_W', null, 'F_W', null, 'F_W', null],
+                    [null, 'P_R', null, 'P_B', null, 'P_G', null, 'G']
+                ],
+                start: [0, 0],
+                goal: [7, 7],
+                targetColor: 'C'
+            },
+            13: {
+                name: "Зигзаг",
+                size: 7,
+                grid: [
+                    ['S', 'F_R', null, null, null, null, null],
+                    [null, null, 'F_G', null, null, null, null],
+                    [null, null, null, 'F_B', null, null, null],
+                    ['P_R', 'P_G', 'P_B', 'F_W', 'P_R', 'P_G', 'P_B'],
+                    [null, null, null, 'F_R', null, null, null],
+                    [null, null, null, 'F_G', null, null, null],
+                    [null, null, null, 'F_B', null, null, 'G']
+                ],
+                start: [0, 0],
+                goal: [6, 6],
+                targetColor: 'Y'
+            },
+            14: {
+                name: "Крест",
+                size: 9,
+                grid: [
+                    [null, null, null, null, 'S', null, null, null, null],
+                    [null, null, null, null, 'F_R', null, null, null, null],
+                    [null, null, null, null, 'P_R', null, null, null, null],
+                    [null, null, null, null, 'F_G', null, null, null, null],
+                    ['F_B', 'P_B', 'F_W', 'P_G', 'F_Y', 'P_R', 'F_C', 'P_B', 'F_M'],
+                    [null, null, null, null, 'F_B', null, null, null, null],
+                    [null, null, null, null, 'P_G', null, null, null, null],
+                    [null, null, null, null, 'F_R', null, null, null, null],
+                    [null, null, null, null, 'G', null, null, null, null]
+                ],
+                start: [4, 0],
+                goal: [4, 8],
+                targetColor: 'W'
+            },
+            15: {
+                name: "Мастер",
+                size: 8,
+                grid: [
+                    ['S', 'F_R', 'F_G', 'F_B', 'F_M', 'F_Y', 'F_C', 'F_W'],
+                    ['P_R', null, null, null, null, null, null, 'P_B'],
+                    ['P_G', null, 'F_W', 'F_W', 'F_W', 'F_W', null, 'P_G'],
+                    ['P_B', null, 'F_W', 'P_R', 'P_G', 'F_W', null, 'P_R'],
+                    ['P_R', null, 'F_W', 'P_B', 'P_R', 'F_W', null, 'P_G'],
+                    ['P_G', null, 'F_W', 'F_W', 'F_W', 'F_W', null, 'P_B'],
+                    ['P_B', null, null, null, null, null, null, 'P_R'],
+                    ['F_W', 'F_C', 'F_Y', 'F_M', 'F_B', 'F_G', 'F_R', 'G']
+                ],
+                start: [0, 0],
+                goal: [7, 7],
+                targetColor: 'W'
             }
         };
         
         this.init();
+        this.initResizeHandler();
     }
     
     async init() {
@@ -431,75 +516,109 @@ class ColorPuzzleGame {
     }
     
     renderGrid(grid) {
-        this.gridElement.innerHTML = '';
-        const level = this.levels[this.currentLevel];
-        this.gridElement.style.gridTemplateColumns = `repeat(${level.size}, 1fr)`;
-        
-        grid.forEach((row, y) => {
-            row.forEach((cell, x) => {
-                const cellElement = document.createElement('div');
-                cellElement.className = 'cell';
-                cellElement.dataset.x = x;
-                cellElement.dataset.y = y;
+    this.gridElement.innerHTML = '';
+    const level = this.levels[this.currentLevel];
+    this.gridElement.style.gridTemplateColumns = `repeat(${level.size}, 1fr)`;
+    
+    // Рассчитываем размер ячеек в зависимости от размера сетки
+    const cellSize = `min(70px, calc(85vw / ${level.size}))`;
+    
+    grid.forEach((row, y) => {
+        row.forEach((cell, x) => {
+            const cellElement = document.createElement('div');
+            cellElement.className = 'cell';
+            cellElement.dataset.x = x;
+            cellElement.dataset.y = y;
+            cellElement.style.minWidth = cellSize;
+            cellElement.style.minHeight = cellSize;
+            
+            if (cell) {
+                const [type, color] = cell.split('_');
                 
-                if (cell) {
-                    const [type, color] = cell.split('_');
-                    
-                    switch(type) {
-                        case 'S':
-                            cellElement.classList.add('start');
-                            break;
-                            
-                        case 'G':
-                            cellElement.classList.add('goal');
-                            break;
-                            
-                        case 'P':
-                            const prism = document.createElement('div');
-                            prism.className = `prism ${this.getColorClass(color)}`;
-                            cellElement.appendChild(prism);
-                            break;
-                            
-                        case 'F':
-                            const filter = document.createElement('div');
-                            filter.className = `filter ${this.getColorClass(color)}`;
-                            cellElement.appendChild(filter);
-                            break;
-                    }
+                switch(type) {
+                    case 'S':
+                        cellElement.classList.add('start');
+                        break;
+                        
+                    case 'G':
+                        cellElement.classList.add('goal');
+                        break;
+                        
+                    case 'P':
+                        const prism = document.createElement('div');
+                        prism.className = `prism ${this.getColorClass(color)}`;
+                        cellElement.appendChild(prism);
+                        break;
+                        
+                    case 'F':
+                        const filter = document.createElement('div');
+                        filter.className = `filter ${this.getColorClass(color)}`;
+                        cellElement.appendChild(filter);
+                        break;
                 }
-                
-                cellElement.addEventListener('click', () => this.moveTo(x, y));
-                this.gridElement.appendChild(cellElement);
+            }
+            
+            cellElement.addEventListener('click', () => this.moveTo(x, y));
+            
+            // Добавляем обработчик touch для лучшего отклика на мобильных
+            cellElement.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                cellElement.style.transform = 'scale(0.95)';
+                cellElement.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            }, { passive: false });
+            
+            cellElement.addEventListener('touchend', () => {
+                cellElement.style.transform = '';
+                cellElement.style.backgroundColor = '';
             });
+            
+            this.gridElement.appendChild(cellElement);
         });
-    }
+    });
+}
     
     placeLight(x, y, instant = false) {
-        // Удаляем предыдущую частицу
-        document.querySelectorAll('.light-particle').forEach(el => el.remove());
-        
-        const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
-        if (!cell) return;
-        
-        const light = document.createElement('div');
-        light.className = 'light-particle';
-        light.style.background = this.getColorString();
-        light.style.color = this.getColorString();
-        
-        if (!instant && this.animationsEnabled) {
-            light.style.animation = 'none';
-            setTimeout(() => {
-                light.style.animation = 'particleGlow 2s ease-in-out infinite';
-            }, 10);
-        }
-        
-        cell.appendChild(light);
-        this.lightPosition = { x, y };
-        
-        // Подсвечиваем активную клетку
-        document.querySelectorAll('.cell.active').forEach(c => c.classList.remove('active'));
-        cell.classList.add('active');
+    // Удаляем предыдущую частицу
+    document.querySelectorAll('.light-particle').forEach(el => el.remove());
+    
+    const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+    if (!cell) return;
+    
+    const light = document.createElement('div');
+    light.className = 'light-particle';
+    light.style.background = this.getColorString();
+    light.style.color = this.getColorString();
+    
+    // Адаптируем размер частицы под размер ячейки
+    const cellWidth = cell.offsetWidth;
+    light.style.width = `${cellWidth * 0.65}px`;
+    light.style.height = light.style.width;
+    
+    if (!instant && this.animationsEnabled) {
+        light.style.animation = 'none';
+        setTimeout(() => {
+            light.style.animation = 'particleGlow 2s ease-in-out infinite';
+        }, 10);
     }
+    
+    cell.appendChild(light);
+    this.lightPosition = { x, y };
+    
+    // Подсвечиваем активную клетку
+    document.querySelectorAll('.cell.active').forEach(c => c.classList.remove('active'));
+    cell.classList.add('active');
+}
+// Добавляем метод для адаптации при изменении размера экрана:
+initResizeHandler() {
+    window.addEventListener('resize', () => {
+        if (this.currentLevel) {
+            // Перерисовываем свет при изменении размера
+            this.placeLight(this.lightPosition.x, this.lightPosition.y, true);
+        }
+    });
+    
+    // Вызываем в конструкторе после init()
+}
     
     async moveTo(x, y) {
         if (this.isMoving) return;
@@ -779,18 +898,43 @@ class ColorPuzzleGame {
     }
     
     showHint() {
-        const level = this.levels[this.currentLevel];
-        const targetColor = this.colorDefinitions[level.targetColor];
+    const level = this.levels[this.currentLevel];
+    const targetColor = this.colorDefinitions[level.targetColor];
+    
+    let hintText = `Уровень ${this.currentLevel}: ${level.name}\n`;
+    hintText += `Цель: ${targetColor.name}\n\n`;
+    
+    // Добавляем специальные подсказки для сложных уровней
+    if (this.currentLevel >= 11) {
+        hintText += "💡 Советы для продвинутых уровней:\n";
         
-        let hintText = `Цель: ${targetColor.name}\n\n`;
-        hintText += "Смешение цветов:\n";
-        hintText += "• Красный + Зелёный = Жёлтый\n";
-        hintText += "• Красный + Синий = Пурпурный\n";
-        hintText += "• Зелёный + Синий = Голубой\n";
-        hintText += "• Все три цвета = Белый";
-        
-        this.showModal('Подсказка', hintText, 'fas fa-lightbulb', 'info');
+        if (this.currentLevel === 11) {
+            hintText += "• Следуй по спирали от края к центру\n";
+            hintText += "• Обрати внимание на порядок фильтров\n";
+        } else if (this.currentLevel === 12) {
+            hintText += "• Двигайся как шахматный конь\n";
+            hintText += "• Используй шахматный паттерн\n";
+        } else if (this.currentLevel === 13) {
+            hintText += "• Следуй по зигзагообразному пути\n";
+            hintText += "• Центральная линия - ключ к успеху\n";
+        } else if (this.currentLevel === 14) {
+            hintText += "• Двигайся по кресту\n";
+            hintText += "• Центр содержит все необходимые призмы\n";
+        } else if (this.currentLevel === 15) {
+            hintText += "• Это самый сложный уровень!\n";
+            hintText += "• Планируй каждый ход заранее\n";
+            hintText += "• Используй все доступные цвета\n";
+        }
     }
+    
+    hintText += "\nПравила смешения:\n";
+    hintText += "• Красный + Зелёный = Жёлтый\n";
+    hintText += "• Красный + Синий = Пурпурный\n";
+    hintText += "• Зелёный + Синий = Голубой\n";
+    hintText += "• Все три цвета = Белый";
+    
+    this.showModal('Подсказка', hintText, 'fas fa-lightbulb', 'info');
+}
     
     isWhite() {
         return this.currentColor.r === 255 && 
