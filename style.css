@@ -337,6 +337,7 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     background: var(--primary-bg);
+    overflow: hidden;
 }
 
 /* Верхняя панель */
@@ -348,6 +349,7 @@ input:checked + .slider:before {
     background: var(--secondary-bg);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     min-height: 70px;
+    flex-shrink: 0;
 }
 
 .header-left {
@@ -415,8 +417,25 @@ input:checked + .slider:before {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 15px;
     overflow-y: auto;
+    gap: 15px;
+    max-height: calc(100vh - 70px);
+}
+
+/* Улучшаем скроллинг */
+.game-board::-webkit-scrollbar {
+    width: 4px;
+}
+
+.game-board::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+.game-board::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 2px;
 }
 
 /* Информация о цвете */
@@ -427,8 +446,8 @@ input:checked + .slider:before {
     background: var(--card-bg);
     border-radius: 16px;
     padding: 15px;
-    margin-bottom: 20px;
     box-shadow: var(--shadow);
+    flex-shrink: 0;
 }
 
 .current-color {
@@ -446,6 +465,7 @@ input:checked + .slider:before {
     transition: var(--transition);
     position: relative;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .color-display::after {
@@ -463,11 +483,15 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    min-width: 0;
 }
 
 .color-text span:first-child {
     font-weight: 600;
     font-size: 1.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .rgb-values {
@@ -475,6 +499,7 @@ input:checked + .slider:before {
     gap: 10px;
     font-size: 0.85rem;
     color: var(--text-secondary);
+    flex-wrap: wrap;
 }
 
 .rgb-values span {
@@ -482,6 +507,7 @@ input:checked + .slider:before {
     background: rgba(0,0,0,0.2);
     padding: 2px 6px;
     border-radius: 4px;
+    white-space: nowrap;
 }
 
 .target-color {
@@ -489,6 +515,8 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    flex-shrink: 0;
+    margin-left: 10px;
 }
 
 .target-color span:first-child {
@@ -500,6 +528,7 @@ input:checked + .slider:before {
     font-weight: 600;
     font-size: 1.1rem;
     color: var(--accent);
+    white-space: nowrap;
 }
 
 /* Игровая сетка */
@@ -508,21 +537,25 @@ input:checked + .slider:before {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 20px 0;
-    min-height: 300px;
+    margin: 10px 0;
+    width: 100%;
+    padding: 0 5px;
+    min-height: 280px;
 }
 
 .grid {
     display: grid;
-    grid-gap: 10px;
+    gap: 8px;
     width: 100%;
-    max-width: 400px;
+    max-width: min(400px, 85vh);
     aspect-ratio: 1;
+    padding: 5px;
+    box-sizing: border-box;
 }
 
 .cell {
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
+    border-radius: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -532,6 +565,10 @@ input:checked + .slider:before {
     transition: var(--transition);
     border: 2px solid transparent;
     touch-action: manipulation;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
 }
 
 .cell:active {
@@ -562,6 +599,8 @@ input:checked + .slider:before {
     position: relative;
     box-shadow: var(--glow);
     animation: float 3s ease-in-out infinite;
+    min-width: 20px;
+    min-height: 20px;
 }
 
 .prism.red { background: var(--red); }
@@ -572,13 +611,14 @@ input:checked + .slider:before {
 .prism.cyan { background: var(--cyan); }
 
 .filter {
-    width: 100%;
-    height: 100%;
-    opacity: 0.8;
+    width: 80%;
+    height: 80%;
+    opacity: 0.85;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
+    border-radius: 8px;
 }
 
 .filter::after {
@@ -587,10 +627,10 @@ input:checked + .slider:before {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 60%;
-    height: 60%;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
+    width: 50%;
+    height: 50%;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 3px;
 }
 
 .filter.red { background: var(--red); }
@@ -603,27 +643,32 @@ input:checked + .slider:before {
 
 .light-particle {
     position: absolute;
-    width: 80%;
-    height: 80%;
+    width: 75%;
+    height: 75%;
     border-radius: 50%;
     z-index: 10;
     box-shadow: 
-        0 0 15px currentColor,
-        0 0 30px currentColor,
-        inset 0 0 15px rgba(255,255,255,0.5);
+        0 0 12px currentColor,
+        0 0 24px currentColor,
+        inset 0 0 12px rgba(255,255,255,0.5);
     animation: particleGlow 2s ease-in-out infinite;
 }
 
 /* Управление */
 .game-controls {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 8px;
+    margin: 5px 0;
+    padding: 0 2px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .control-btn {
     flex: 1;
-    padding: 14px;
+    min-width: calc(50% - 4px);
+    max-width: calc(50% - 4px);
+    padding: 14px 12px;
     background: var(--card-bg);
     border: none;
     border-radius: 12px;
@@ -636,6 +681,8 @@ input:checked + .slider:before {
     align-items: center;
     gap: 8px;
     font-size: 0.95rem;
+    min-height: 50px;
+    white-space: nowrap;
 }
 
 .control-btn:hover:not(:disabled) {
@@ -650,16 +697,20 @@ input:checked + .slider:before {
 
 .control-btn:last-child {
     flex: 0 0 60px;
+    min-width: 60px;
+    max-width: 60px;
 }
 
 .level-nav {
     display: flex;
-    gap: 10px;
+    gap: 8px;
+    padding: 0 2px;
+    margin: 5px 0 10px 0;
 }
 
 .nav-btn {
     flex: 1;
-    padding: 14px;
+    padding: 14px 12px;
     background: var(--accent);
     border: none;
     border-radius: 12px;
@@ -671,11 +722,22 @@ input:checked + .slider:before {
     justify-content: center;
     align-items: center;
     gap: 8px;
+    min-height: 50px;
 }
 
 .nav-btn:hover {
     background: var(--accent-hover);
     transform: translateY(-2px);
+}
+
+/* Кнопки */
+.btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active {
+    transform: scale(0.98);
 }
 
 /* Модальные окна */
@@ -696,7 +758,7 @@ input:checked + .slider:before {
 
 .modal-content {
     background: var(--card-bg);
-    padding: 30px;
+    padding: 25px;
     border-radius: 20px;
     text-align: center;
     width: 100%;
@@ -722,13 +784,14 @@ input:checked + .slider:before {
     margin-bottom: 20px;
     color: var(--text-secondary);
     line-height: 1.4;
+    white-space: pre-line;
 }
 
 .modal-stats {
     display: flex;
     justify-content: center;
     gap: 30px;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .stat {
@@ -802,16 +865,6 @@ input:checked + .slider:before {
     opacity: 0;
 }
 
-/* Кнопки */
-.btn {
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.btn:active {
-    transform: scale(0.98);
-}
-
 /* Анимации */
 @keyframes rotatePrism {
     0% { transform: rotateX(0) rotateY(0); }
@@ -852,15 +905,15 @@ input:checked + .slider:before {
 @keyframes particleGlow {
     0%, 100% { 
         box-shadow: 
-            0 0 15px currentColor,
-            0 0 30px currentColor,
-            inset 0 0 15px rgba(255,255,255,0.5);
+            0 0 12px currentColor,
+            0 0 24px currentColor,
+            inset 0 0 12px rgba(255,255,255,0.5);
     }
     50% { 
         box-shadow: 
-            0 0 20px currentColor,
-            0 0 40px currentColor,
-            inset 0 0 20px rgba(255,255,255,0.7);
+            0 0 16px currentColor,
+            0 0 32px currentColor,
+            inset 0 0 16px rgba(255,255,255,0.7);
     }
 }
 
@@ -873,7 +926,7 @@ input:checked + .slider:before {
 @media (max-width: 360px) {
     .menu-container,
     .game-board {
-        padding: 15px;
+        padding: 12px;
     }
     
     .level-grid {
@@ -888,10 +941,12 @@ input:checked + .slider:before {
     
     .target-color {
         text-align: left;
+        margin-left: 0;
     }
     
     .grid {
-        grid-gap: 8px;
+        gap: 6px;
+        max-width: min(350px, 90vw);
     }
     
     .modal-content {
@@ -902,12 +957,28 @@ input:checked + .slider:before {
         flex-direction: column;
         gap: 15px;
     }
+    
+    .control-btn {
+        min-width: calc(100% - 4px);
+        max-width: calc(100% - 4px);
+    }
+    
+    .control-btn:last-child {
+        min-width: 60px;
+        max-width: 60px;
+    }
 }
 
-/* Портретная ориентация */
+/* Портретная ориентация - телефоны */
 @media (orientation: portrait) and (max-height: 700px) {
+    .game-board {
+        padding: 10px;
+        gap: 10px;
+    }
+    
     .grid-wrapper {
         min-height: 250px;
+        margin: 5px 0;
     }
     
     .color-display {
@@ -915,8 +986,22 @@ input:checked + .slider:before {
         height: 40px;
     }
     
+    .color-text span:first-child {
+        font-size: 1rem;
+    }
+    
+    .target-color span:last-child {
+        font-size: 1rem;
+    }
+    
     .game-controls {
-        margin-bottom: 15px;
+        margin: 3px 0;
+    }
+    
+    .control-btn, .nav-btn {
+        min-height: 45px;
+        padding: 12px 10px;
+        font-size: 0.9rem;
     }
 }
 
@@ -924,33 +1009,96 @@ input:checked + .slider:before {
 @media (orientation: landscape) and (max-height: 500px) {
     .game-board {
         flex-direction: row;
-        gap: 20px;
-        align-items: center;
-    }
-    
-    .grid-wrapper {
-        flex: 0 0 auto;
-        margin: 0;
-    }
-    
-    .grid {
-        max-width: 300px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px;
     }
     
     .color-info {
+        flex: 0 0 100%;
+        order: 1;
+        flex-direction: row;
+        padding: 12px;
+    }
+    
+    .grid-wrapper {
         flex: 1;
-        flex-direction: column;
-        max-width: 200px;
+        order: 2;
+        min-height: auto;
+        max-width: 55vw;
+        margin: 0;
     }
     
-    .game-controls,
+    .controls-container {
+        flex: 0 0 calc(45vw - 20px);
+        order: 3;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-left: 10px;
+    }
+    
+    .game-controls {
+        flex-direction: column;
+        margin: 0;
+        flex-wrap: nowrap;
+    }
+    
     .level-nav {
+        margin: 0;
         flex-direction: column;
     }
     
-    .control-btn,
-    .nav-btn {
+    .control-btn, .nav-btn {
         width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+    }
+    
+    .control-btn:last-child {
+        min-width: 100%;
+        max-width: 100%;
+    }
+}
+
+/* Для квадратных экранов */
+@media (max-aspect-ratio: 3/4) {
+    .grid {
+        max-width: min(350px, 80vw);
+    }
+    
+    .game-board {
+        max-height: calc(100vh - 60px);
+    }
+}
+
+/* Улучшаем отступы на больших экранах */
+@media (min-width: 768px) {
+    .grid {
+        max-width: 450px;
+        gap: 10px;
+    }
+    
+    .cell {
+        border-radius: 12px;
+    }
+    
+    .game-board {
+        padding: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+}
+
+/* Для высоких экранов */
+@media (min-height: 800px) {
+    .grid-wrapper {
+        min-height: 350px;
+    }
+    
+    .grid {
+        max-width: min(450px, 70vh);
     }
 }
 
@@ -972,4 +1120,38 @@ input:checked + .slider:before {
     .screen {
         height: -webkit-fill-available;
     }
+    
+    /* Улучшаем отзывчивость на iOS */
+    .cell {
+        -webkit-touch-callout: none;
+    }
+}
+
+/* Фикс для Firefox на мобильных */
+@-moz-document url-prefix() {
+    .cell:active {
+        transform: scale(0.95);
+    }
+}
+
+/* Улучшаем доступность для слабовидящих */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .prism,
+    .light-particle,
+    .goal {
+        animation: none;
+    }
+}
+
+/* Гарантируем, что все интерактивные элементы доступны */
+button:focus-visible,
+.cell:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
