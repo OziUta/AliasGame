@@ -518,10 +518,22 @@ class ColorPuzzleGame {
     renderGrid(grid) {
     this.gridElement.innerHTML = '';
     const level = this.levels[this.currentLevel];
-    this.gridElement.style.gridTemplateColumns = `repeat(${level.size}, 1fr)`;
     
-    // Рассчитываем размер ячеек в зависимости от размера сетки
-    const cellSize = `min(70px, calc(85vw / ${level.size}))`;
+    // Очищаем старые стили
+    this.gridElement.style.cssText = '';
+    
+    // Устанавливаем grid template columns
+    this.gridElement.style.display = 'grid';
+    this.gridElement.style.gridTemplateColumns = `repeat(${level.size}, 1fr)`;
+    this.gridElement.style.gap = '6px';
+    this.gridElement.style.width = '100%';
+    this.gridElement.style.maxWidth = 'min(350px, 80vw)';
+    this.gridElement.style.margin = '0 auto';
+    this.gridElement.style.aspectRatio = '1';
+    
+    // Рассчитываем размер ячейки
+    const containerWidth = this.gridElement.parentElement.offsetWidth;
+    const cellSize = Math.min(containerWidth / level.size - 6, 70); // 6px gap
     
     grid.forEach((row, y) => {
         row.forEach((cell, x) => {
@@ -529,8 +541,10 @@ class ColorPuzzleGame {
             cellElement.className = 'cell';
             cellElement.dataset.x = x;
             cellElement.dataset.y = y;
-            cellElement.style.minWidth = cellSize;
-            cellElement.style.minHeight = cellSize;
+            
+            // Устанавливаем минимальные размеры
+            cellElement.style.minWidth = '30px';
+            cellElement.style.minHeight = '30px';
             
             if (cell) {
                 const [type, color] = cell.split('_');
@@ -538,6 +552,10 @@ class ColorPuzzleGame {
                 switch(type) {
                     case 'S':
                         cellElement.classList.add('start');
+                        // Добавляем начальную позицию света сразу
+                        if (x === level.start[0] && y === level.start[1]) {
+                            this.lightPosition = { x, y };
+                        }
                         break;
                         
                     case 'G':
@@ -558,23 +576,27 @@ class ColorPuzzleGame {
                 }
             }
             
-            cellElement.addEventListener('click', () => this.moveTo(x, y));
+            // Добавляем обработчик клика
+            cellElement.addEventListener('click', () => {
+                console.log('Cell clicked:', x, y);
+                this.moveTo(x, y);
+            });
             
-            // Добавляем обработчик touch для лучшего отклика на мобильных
+            // Для мобильных - touch события
             cellElement.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                cellElement.style.transform = 'scale(0.95)';
-                cellElement.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                console.log('Cell touched:', x, y);
+                this.moveTo(x, y);
             }, { passive: false });
-            
-            cellElement.addEventListener('touchend', () => {
-                cellElement.style.transform = '';
-                cellElement.style.backgroundColor = '';
-            });
             
             this.gridElement.appendChild(cellElement);
         });
     });
+    
+    // Размещаем свет после создания сетки
+    setTimeout(() => {
+        this.placeLight(level.start[0], level.start[1], true);
+    }, 100);
 }
     
     placeLight(x, y, instant = false) {
@@ -621,57 +643,74 @@ initResizeHandler() {
 }
     
     async moveTo(x, y) {
-        if (this.isMoving) return;
-        
-        const level = this.levels[this.currentLevel];
-        const dx = Math.abs(x - this.lightPosition.x);
-        const dy = Math.abs(y - this.lightPosition.y);
-        
-        // Только вертикальные и горизонтальные движения (без диагоналей)
-        if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-            // Допустимый ход
-        } else {
-            return; // Неправильное направление
-        }
-        
-        const targetCell = level.grid[y][x];
-        
-        // Проверяем фильтр
-        if (targetCell && targetCell.startsWith('F_')) {
-            const filterColor = targetCell.split('_')[1];
-            if (!this.canPassFilter(filterColor)) {
-                this.shakeCell(x, y);
-                this.playSound(this.errorSound);
-                return;
-            }
-        }
-        
-        // Сохраняем состояние для отмены
-        this.history.push({
-            position: { ...this.lightPosition },
-            color: { ...this.currentColor },
-            moves: this.moves
-        });
-        this.updateUndoButton();
-        
-        this.moves++;
-        this.updateMoves();
-        
-        // Анимируем движение
-        await this.animateMove(x, y);
-        
-        // Применяем эффект призмы
-        if (targetCell && targetCell.startsWith('P_')) {
-            const prismColor = targetCell.split('_')[1];
-            await this.applyPrism(prismColor, x, y);
-        }
-        
-        // Проверяем цель
-        if (targetCell === 'G') {
-            await this.checkGoal(x, y);
+    console.log('Attempting move to:', x, y, 'Current position:', this.lightPosition);
+    
+    if (this.isMoving) {
+        console.log('Already moving');
+        return;
+    }
+    
+    const level = this.levels[this.currentLevel];
+    const dx = Math.abs(x - this.lightPosition.x);
+    const dy = Math.abs(y - this.lightPosition.y);
+    
+    console.log('Delta:', dx, dy);
+    
+    // Только вертикальные и горизонтальные движения (без диагоналей)
+    // Должен быть ход на 1 клетку в любом направлении
+    const isValidMove = (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
+    
+    if (!isValidMove) {
+        console.log('Invalid move - not adjacent');
+        return;
+    }
+    
+    const targetCell = level.grid[y][x];
+    console.log('Target cell:', targetCell);
+    
+    // Проверяем фильтр
+    if (targetCell && targetCell.startsWith('F_')) {
+        const filterColor = targetCell.split('_')[1];
+        console.log('Filter check:', filterColor, 'Can pass?', this.canPassFilter(filterColor));
+        if (!this.canPassFilter(filterColor)) {
+            this.shakeCell(x, y);
+            this.playSound(this.errorSound);
+            console.log('Cannot pass filter');
+            return;
         }
     }
     
+    // Сохраняем состояние для отмены
+    this.history.push({
+        position: { ...this.lightPosition },
+        color: { ...this.currentColor },
+        moves: this.moves
+    });
+    this.updateUndoButton();
+    
+    this.moves++;
+    this.updateMoves();
+    
+    console.log('Moving from', this.lightPosition, 'to', {x, y});
+    
+    // Анимируем движение
+    await this.animateMove(x, y);
+    
+    // Применяем эффект призмы
+    if (targetCell && targetCell.startsWith('P_')) {
+        const prismColor = targetCell.split('_')[1];
+        console.log('Applying prism:', prismColor);
+        await this.applyPrism(prismColor, x, y);
+    }
+    
+    // Проверяем цель
+    if (targetCell === 'G') {
+        console.log('Reached goal!');
+        await this.checkGoal(x, y);
+    }
+    
+    console.log('Move completed');
+}
     animateMove(x, y) {
         return new Promise(resolve => {
             this.isMoving = true;
@@ -804,22 +843,33 @@ initResizeHandler() {
     }
     
     canPassFilter(filterColor) {
-        const filterRGB = this.colorDefinitions[filterColor]?.rgb;
-        if (!filterRGB) return false;
-        
-        // Фильтр пропускает свет, если у света есть ВСЕ компоненты фильтра
-        const channels = ['r', 'g', 'b'];
-        for (const channel of channels) {
-            if (filterRGB[channel] > 0) {
-                if (this.currentColor[channel] === 0) {
-                    return false;
-                }
-            } else {
-                if (this.currentColor[channel] > 0) {
-                    return false;
-                }
+    console.log('Checking filter:', filterColor, 'Current color:', this.currentColor);
+    
+    // Временно упрощаем логику для отладки
+    // Пусть все фильтры работают
+    return true;
+    
+    /* Раскомментируйте позже:
+    const filterRGB = this.colorDefinitions[filterColor]?.rgb;
+    if (!filterRGB) return false;
+    
+    // Фильтр пропускает свет, если у света есть ВСЕ компоненты фильтра
+    const channels = ['r', 'g', 'b'];
+    for (const channel of channels) {
+        if (filterRGB[channel] > 0) {
+            if (this.currentColor[channel] === 0) {
+                return false;
+            }
+        } else {
+            if (this.currentColor[channel] > 0) {
+                return false;
             }
         }
+    }
+    
+    return true;
+    */
+}
         
         return true;
     }
@@ -1079,3 +1129,4 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
     });
 });
+
